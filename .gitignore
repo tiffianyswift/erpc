@@ -1,3 +1,9 @@
+.idea
+out/
+*.class
+*.jar
+*.war
+*.zip
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
