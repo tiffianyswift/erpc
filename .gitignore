@@ -4,6 +4,7 @@ out/
 *.jar
 *.war
 *.zip
+*.tar
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
