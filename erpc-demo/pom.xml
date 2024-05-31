@@ -12,7 +12,7 @@
     <artifactId>erpc-demo</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>erpc-client-demo</module>
+        <module>erpc-consumer-demo</module>
         <module>erpc-provider-demo</module>
         <module>erpc-api</module>
     </modules>

@@ -23,6 +23,11 @@
             <artifactId>erpc-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.lavender</groupId>
+            <artifactId>erpc-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
 </project>
