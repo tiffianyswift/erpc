@@ -1,13 +1,27 @@
 package com.lavender;
 
+import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;
 import com.lavender.discovery.RegistryConfig;
+import com.lavender.exceptions.NetworkException;
+import com.lavender.proxy.handler.RpcConsumerInvocationHandler;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author: lavender
@@ -24,20 +38,14 @@ public class ReferenceConfig<T> {
 
     public T get(){
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Class[] classes = new Class[]{interfaceReceiver};
+        Class<T>[] classes = new Class[]{interfaceReceiver};
+        InvocationHandler handler = new RpcConsumerInvocationHandler(registry, interfaceReceiver);
+        // service find
 
-        Object helloProxy = Proxy.newProxyInstance(classLoader, classes, new InvocationHandler() {
-            @Override
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                System.out.println(method);
-                System.out.println(args[0]);
-                InetSocketAddress address = registry.lookup(interfaceReceiver.getName());
-                if(log.isDebugEnabled()){
-                    log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
-                }
-                return null;
-            }
-        });
+        Object helloProxy = Proxy.newProxyInstance(classLoader, classes, handler);
+
+
+
         return (T) helloProxy;
     }
 

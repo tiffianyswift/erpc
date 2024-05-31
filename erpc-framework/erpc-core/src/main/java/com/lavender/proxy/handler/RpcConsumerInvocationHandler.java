@@ -1,0 +1,116 @@
+package com.lavender.proxy.handler;
+
+import com.lavender.ErpcBootStrap;
+import com.lavender.discovery.NettyBootstrapInitializer;
+import com.lavender.discovery.Registry;
+import com.lavender.exceptions.DiscoverRegistryException;
+import com.lavender.exceptions.NetworkException;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import lombok.extern.slf4j.Slf4j;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+/**
+ * @author: lavender
+ * @Desc:
+ * @create: 2024-05-31 20:45
+ **/
+
+@Slf4j
+public class RpcConsumerInvocationHandler implements InvocationHandler {
+    private Registry registry;
+    private Class<?> interfaceReceiver;
+
+    public RpcConsumerInvocationHandler(Registry registry, Class<?> interfaceReceiver) {
+        this.registry = registry;
+        this.interfaceReceiver = interfaceReceiver;
+    }
+
+    public Registry getRegistry() {
+        return registry;
+    }
+
+    public void setRegistry(Registry registry) {
+        this.registry = registry;
+    }
+
+    public Class<?> getInterfaceReceiver() {
+        return interfaceReceiver;
+    }
+
+    public void setInterfaceReceiver(Class<?> interfaceReceiver) {
+        this.interfaceReceiver = interfaceReceiver;
+    }
+    private Channel getAvailableChannel(InetSocketAddress address){
+        Channel channel = ErpcBootStrap.CHANNEL_CACHE.get(address);
+        if(channel == null){
+//                    channel = NettyBootstrapInitializer.getBootstrap().connect(address).await().channel();
+            CompletableFuture<Channel> channelFuture = new CompletableFuture<>();
+            NettyBootstrapInitializer.getBootstrap().connect(address).addListener( (ChannelFutureListener) promise -> {
+                if(promise.isDone()){
+                    if(log.isDebugEnabled()){
+                        log.debug("已经和【{}】成功建立了连接", address);
+                    }
+                    channelFuture.complete(promise.channel());
+                }
+                else if(!promise.isSuccess()){
+                    channelFuture.completeExceptionally(promise.cause());
+                }
+            });
+            try {
+                channel = channelFuture.get(3, TimeUnit.SECONDS);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                log.error("获取通道发生异常.", e);
+                // todo 添加异常
+                throw new DiscoverRegistryException();
+            }
+            ErpcBootStrap.CHANNEL_CACHE.put(address, channel);
+        }
+        if(channel == null){
+            log.error("创建与【{}】通道时发生异常！", address);
+            throw new NetworkException("创建通道时发生异常！");
+        }
+        return channel;
+    }
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        InetSocketAddress address = registry.lookup(interfaceReceiver.getName());
+        if(log.isDebugEnabled()){
+            log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
+        }
+        Channel channel = getAvailableChannel(address);
+        if(log.isDebugEnabled()){
+            log.debug("获取了和【{address}】建立的连接通道", interfaceReceiver.getName(), address);
+        }
+        // use netty to send rpc request
+
+        //sync
+//                ChannelFuture channelFuture = channel.writeAndFlush(new Object());
+//                if(channelFuture.isDone()){
+//                    Object object = channelFuture.getNow();
+//                }
+//                else if(!channelFuture.isSuccess()){
+//                    Throwable cause = channelFuture.cause();
+//                    throw new RuntimeException(cause);
+//                }
+        //async
+        CompletableFuture<Object> completableFuture = new CompletableFuture<>();
+        ErpcBootStrap.PENDING_REQUEST.put(1L, completableFuture);
+        channel.writeAndFlush(Unpooled.copiedBuffer("hello".getBytes())).addListener(promise ->{
+
+            if(!promise.isSuccess()){
+                completableFuture.completeExceptionally(promise.cause());
+            }
+        });
+
+        return completableFuture.get(10, TimeUnit.SECONDS);
+    }
+}

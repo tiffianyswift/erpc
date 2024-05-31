@@ -1,6 +1,7 @@
 package com.lavender;
 
 import com.lavender.discovery.RegistryConfig;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -9,6 +10,7 @@ import com.lavender.discovery.RegistryConfig;
  * @create: 2024-05-29 21:07
  **/
 
+@Slf4j
 public class Application {
     public static void main(String[] args) {
         ReferenceConfig<ExampleErpc> reference = new ReferenceConfig<>();
@@ -21,6 +23,7 @@ public class Application {
                 .reference(reference);
 
         ExampleErpc exampleErpc = reference.get();
-        exampleErpc.saySo("so");
+        String res = exampleErpc.saySo("so");
+        log.error(res+"yehongliang");
     }
 }
