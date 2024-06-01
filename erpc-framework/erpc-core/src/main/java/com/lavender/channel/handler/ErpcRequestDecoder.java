@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
 /**
@@ -21,8 +20,8 @@ import java.io.ObjectInputStream;
  **/
 
 @Slf4j
-public class ErpcMessageDecoder extends LengthFieldBasedFrameDecoder {
-    public ErpcMessageDecoder() {
+public class ErpcRequestDecoder extends LengthFieldBasedFrameDecoder {
+    public ErpcRequestDecoder() {
         super(
                 MessageConstant.MAX_FRAME_LENGTH,
                 MessageConstant.MAGIC_NUM.length + MessageConstant.VERSION_LENGTH + MessageConstant.HEADER_FIELD_LENGTH,
@@ -100,6 +99,9 @@ public class ErpcMessageDecoder extends LengthFieldBasedFrameDecoder {
 
         } catch (IOException | ClassNotFoundException e) {
             log.error("请求【{}】反序列化时发生了异常", requestId, e);
+        }
+        if(log.isDebugEnabled()){
+            log.debug("请求【{}】已完成报文的解码。", erpcRequest.getRequestId());
         }
         return erpcRequest;
 

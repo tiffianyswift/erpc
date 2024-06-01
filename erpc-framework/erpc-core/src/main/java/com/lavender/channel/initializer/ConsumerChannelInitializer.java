@@ -1,6 +1,7 @@
 package com.lavender.channel.initializer;
 
-import com.lavender.channel.handler.ErpcMessageEncoder;
+import com.lavender.channel.handler.ErpcRequestEncoder;
+import com.lavender.channel.handler.ErpcResponseDecoder;
 import com.lavender.channel.handler.MySimpleChannelInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -18,7 +19,8 @@ public class ConsumerChannelInitializer extends ChannelInitializer<SocketChannel
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         socketChannel.pipeline()
                 .addLast(new LoggingHandler(LogLevel.DEBUG))
-                .addLast(new ErpcMessageEncoder())
+                .addLast(new ErpcRequestEncoder())
+                .addLast(new ErpcResponseDecoder())
                 .addLast(new MySimpleChannelInboundHandler());
     }
 }

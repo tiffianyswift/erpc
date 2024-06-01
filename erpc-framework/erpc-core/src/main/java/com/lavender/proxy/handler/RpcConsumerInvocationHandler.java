@@ -91,7 +91,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         }
         Channel channel = getAvailableChannel(address);
         if(log.isDebugEnabled()){
-            log.debug("获取了和【{address}】建立的连接通道", interfaceReceiver.getName(), address);
+            log.debug("获取了和【{}】建立的连接通道", address, interfaceReceiver.getName());
         }
         ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
                         .interfaceName(interfaceReceiver.getName())

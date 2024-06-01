@@ -1,6 +1,5 @@
 package com.lavender.channel.handler;
 
-import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
 import com.lavender.transport.message.MessageConstant;
@@ -19,7 +18,7 @@ import java.io.ObjectOutputStream;
  * @create: 2024-06-01 08:45
  **/
 @Slf4j
-public class ErpcMessageEncoder extends MessageToByteEncoder<ErpcRequest> {
+public class ErpcRequestEncoder extends MessageToByteEncoder<ErpcRequest> {
     /**
      * 4B magic num
      * 1B protocol version
@@ -56,6 +55,9 @@ public class ErpcMessageEncoder extends MessageToByteEncoder<ErpcRequest> {
         byteBuf.writeInt(MessageConstant.HEADER_LENGTH + bodyBytes.length);
 
         byteBuf.writerIndex(writerIndex);
+        if(log.isDebugEnabled()){
+            log.debug("请求【{}】已完成报文的编码。", erpcRequest.getRequestId());
+        }
     }
     private byte[] getBodyBytes(ErpcRequestPayload requestPayload){
         if(requestPayload==null){

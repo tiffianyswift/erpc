@@ -1,24 +1,20 @@
 package com.lavender;
 
 
-import com.lavender.channel.handler.ErpcMessageDecoder;
+import com.lavender.channel.handler.ErpcRequestDecoder;
+import com.lavender.channel.handler.ErpcResponseEncoder;
 import com.lavender.channel.handler.MethodCallHandler;
 import com.lavender.discovery.Registry;
 import com.lavender.discovery.RegistryConfig;
-import com.lavender.discovery.impl.ZooKeeperRegistry;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.zookeeper.Watcher;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,8 +118,9 @@ public class ErpcBootStrap {
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     socketChannel.pipeline()
                             .addLast(new LoggingHandler())
-                            .addLast(new ErpcMessageDecoder())
-                            .addLast(new MethodCallHandler());
+                            .addLast(new ErpcRequestDecoder())
+                            .addLast(new MethodCallHandler())
+                            .addLast(new ErpcResponseEncoder());
                 }
             });
             ChannelFuture channelFuture = serverBootstrap.bind(port).sync();
