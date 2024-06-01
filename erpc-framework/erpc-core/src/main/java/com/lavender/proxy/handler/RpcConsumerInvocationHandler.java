@@ -5,6 +5,9 @@ import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;
 import com.lavender.exceptions.DiscoverRegistryException;
 import com.lavender.exceptions.NetworkException;
+import com.lavender.transport.enumeration.RequestType;
+import com.lavender.transport.message.ErpcRequest;
+import com.lavender.transport.message.ErpcRequestPayload;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -90,6 +93,21 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         if(log.isDebugEnabled()){
             log.debug("获取了和【{address}】建立的连接通道", interfaceReceiver.getName(), address);
         }
+        ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
+                        .interfaceName(interfaceReceiver.getName())
+                                .methodName(method.getName())
+                                        .parametersType(method.getParameterTypes())
+                                                .parametersValue(args)
+                                                        .returnType(method.getReturnType())
+                                                                .build();
+        ErpcRequest erpcRequest = ErpcRequest.builder()
+                .requestId(1L)
+                .compressType((byte) 1)
+                .requestType(RequestType.REQUEST.getId())
+                .serializeType((byte) 1)
+                .requestPayload(requestPayload)
+                .build();
+
         // use netty to send rpc request
 
         //sync
@@ -104,7 +122,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         //async
         CompletableFuture<Object> completableFuture = new CompletableFuture<>();
         ErpcBootStrap.PENDING_REQUEST.put(1L, completableFuture);
-        channel.writeAndFlush(Unpooled.copiedBuffer("hello".getBytes())).addListener(promise ->{
+        channel.writeAndFlush(erpcRequest).addListener(promise ->{
 
             if(!promise.isSuccess()){
                 completableFuture.completeExceptionally(promise.cause());
@@ -113,4 +131,5 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
         return completableFuture.get(10, TimeUnit.SECONDS);
     }
+
 }

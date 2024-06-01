@@ -1,6 +1,8 @@
 package com.lavender;
 
 
+import com.lavender.channel.handler.ErpcMessageDecoder;
+import com.lavender.channel.handler.MethodCallHandler;
 import com.lavender.discovery.Registry;
 import com.lavender.discovery.RegistryConfig;
 import com.lavender.discovery.impl.ZooKeeperRegistry;
@@ -11,6 +13,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.Watcher;
 
@@ -35,7 +38,7 @@ public class ErpcBootStrap {
     private ProtocolConfig protocolConfig;
     private int port = 8088;
     private Registry registry;
-    private static final Map<String, ServiceConfig<?>> SERVICES_LIST = new HashMap<>(16);
+    public static final Map<String, ServiceConfig<?>> SERVICES_LIST = new HashMap<>(16);
 
     public static final Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
 
@@ -117,14 +120,10 @@ public class ErpcBootStrap {
 
                 @Override
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
-                    socketChannel.pipeline().addLast(new SimpleChannelInboundHandler<>() {
-                        @Override
-                        protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object msg) throws Exception {
-                            ByteBuf byteBuf = (ByteBuf) msg;
-                            log.info("byteBuf-->{}", byteBuf.toString(Charset.defaultCharset()));
-                            channelHandlerContext.channel().writeAndFlush(Unpooled.copiedBuffer("erpc--hello".getBytes()));
-                        }
-                    });
+                    socketChannel.pipeline()
+                            .addLast(new LoggingHandler())
+                            .addLast(new ErpcMessageDecoder())
+                            .addLast(new MethodCallHandler());
                 }
             });
             ChannelFuture channelFuture = serverBootstrap.bind(port).sync();
