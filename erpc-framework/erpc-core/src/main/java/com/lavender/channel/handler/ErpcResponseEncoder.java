@@ -1,5 +1,7 @@
 package com.lavender.channel.handler;
 
+import com.lavender.compress.Compressor;
+import com.lavender.compress.CompressorFactory;
 import com.lavender.serialiize.Serializer;
 import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.message.ErpcRequest;
@@ -52,6 +54,10 @@ public class ErpcResponseEncoder extends MessageToByteEncoder<ErpcResponse> {
         Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getSerializer();
         byte[] bodyBytes = serializer.serialize(erpcResponse.getBody());
         // todo compress
+
+        Compressor compressor = CompressorFactory.getCompressorWraper(erpcResponse.getCompressType()).getCompressor();
+        bodyBytes = compressor.compress(bodyBytes);
+
         byteBuf.writeBytes(bodyBytes);
 
         int writerIndex = byteBuf.writerIndex();

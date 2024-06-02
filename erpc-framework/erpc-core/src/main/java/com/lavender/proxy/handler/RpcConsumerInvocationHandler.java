@@ -1,7 +1,7 @@
 package com.lavender.proxy.handler;
 
 import com.lavender.ErpcBootStrap;
-import com.lavender.IDGenerator;
+import com.lavender.compress.CompressorFactory;
 import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;
 import com.lavender.exceptions.DiscoverRegistryException;
@@ -10,7 +10,6 @@ import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
@@ -104,7 +103,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                                                                 .build();
         ErpcRequest erpcRequest = ErpcRequest.builder()
                 .requestId(ErpcBootStrap.ID_GENERATOR.getId())
-                .compressType((byte) 1)
+                .compressType(CompressorFactory.getCompressorWraper(ErpcBootStrap.COMPRESS_TYPE).getCode())
                 .requestType(RequestType.REQUEST.getId())
                 .serializeType(SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getCode())
                 .requestPayload(requestPayload)

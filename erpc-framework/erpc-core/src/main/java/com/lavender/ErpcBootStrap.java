@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 @Slf4j
 public class ErpcBootStrap {
+
     private static ErpcBootStrap erpcBootStrap = new ErpcBootStrap();
     private String applicationName = "default";
     private RegistryConfig registryConfig;
@@ -43,6 +44,7 @@ public class ErpcBootStrap {
 
     public final static Map<Long, CompletableFuture<Object>> PENDING_REQUEST = new ConcurrentHashMap<>(8);
     public static String SERIALIZE_TYPE = "jdk";
+    public static String COMPRESS_TYPE = "gzip";
 
 
     private ErpcBootStrap(){
@@ -142,6 +144,13 @@ public class ErpcBootStrap {
 
     public ErpcBootStrap serialize(String type) {
         SERIALIZE_TYPE = type;
+        if(log.isDebugEnabled()){
+            log.debug("使用的序列化方式为【{}】", type);
+        }
+        return this;
+    }
+    public ErpcBootStrap compress(String type) {
+        COMPRESS_TYPE = type;
         if(log.isDebugEnabled()){
             log.debug("使用的序列化方式为【{}】", type);
         }

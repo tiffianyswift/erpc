@@ -1,5 +1,7 @@
 package com.lavender.channel.handler;
 
+import com.lavender.compress.Compressor;
+import com.lavender.compress.CompressorFactory;
 import com.lavender.serialiize.Serializer;
 import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
@@ -10,11 +12,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 
 /**
  * @author: lavender
@@ -93,6 +90,10 @@ public class ErpcRequestDecoder extends LengthFieldBasedFrameDecoder {
         int payLoadLength = fullLength-headLength;
         byte[] payload = new byte[payLoadLength];
         byteBuf.readBytes(payload);
+
+        Compressor compressor = CompressorFactory.getCompressorWraper(compressType).getCompressor();
+        payload = compressor.decompress(payload);
+
 
         Serializer serializer = SerializerFactory.getSerializerWraper(serializeType).getSerializer();
         ErpcRequestPayload erpcRequestPayload = serializer.deserialize(payload, ErpcRequestPayload.class);

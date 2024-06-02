@@ -1,20 +1,15 @@
 package com.lavender.channel.handler;
 
-import com.lavender.ErpcBootStrap;
+import com.lavender.compress.CompressorFactory;
+import com.lavender.compress.Compressor;
 import com.lavender.serialiize.Serializer;
 import com.lavender.serialiize.SerializerFactory;
-import com.lavender.serialiize.impl.JdkSerializer;
 import com.lavender.transport.message.ErpcRequest;
-import com.lavender.transport.message.ErpcRequestPayload;
 import com.lavender.transport.message.MessageConstant;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 
 /**
  * @author: lavender
@@ -50,8 +45,11 @@ public class ErpcRequestEncoder extends MessageToByteEncoder<ErpcRequest> {
         byteBuf.writeByte(erpcRequest.getCompressType());
         byteBuf.writeLong(erpcRequest.getRequestId());
 
-        Serializer serializer = SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getSerializer();
+        Serializer serializer = SerializerFactory.getSerializerWraper(erpcRequest.getSerializeType()).getSerializer();
         byte[] bodyBytes = serializer.serialize(erpcRequest.getRequestPayload());
+
+        Compressor compressor = CompressorFactory.getCompressorWraper(erpcRequest.getCompressType()).getCompressor();
+        bodyBytes = compressor.compress(bodyBytes);
 
         byteBuf.writeBytes(bodyBytes);
 

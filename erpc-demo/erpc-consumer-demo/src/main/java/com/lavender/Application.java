@@ -22,6 +22,7 @@ public class Application {
                 .application("first-erpc-consumer")
                 .registry(new RegistryConfig("zookeeper://"+Constant.DEFAULT_ZK_CONNECT))
                 .serialize("hessian")
+                .compress("gzip")
                 .reference(reference);
 
         ExampleErpc exampleErpc = reference.get();

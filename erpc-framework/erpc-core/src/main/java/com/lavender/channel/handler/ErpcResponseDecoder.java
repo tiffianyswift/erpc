@@ -1,5 +1,7 @@
 package com.lavender.channel.handler;
 
+import com.lavender.compress.Compressor;
+import com.lavender.compress.CompressorFactory;
 import com.lavender.serialiize.Serializer;
 import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
@@ -91,6 +93,10 @@ public class ErpcResponseDecoder extends LengthFieldBasedFrameDecoder {
         int bodyLength = fullLength-headLength;
         byte[] payload = new byte[bodyLength];
         byteBuf.readBytes(payload);
+
+        Compressor compressor = CompressorFactory.getCompressorWraper(compressType).getCompressor();
+        payload = compressor.decompress(payload);
+
 
         Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getSerializer();
         Object body = serializer.deserialize(payload, Object.class);
