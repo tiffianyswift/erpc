@@ -1,5 +1,7 @@
 package com.lavender.channel.handler;
 
+import com.lavender.serialiize.Serializer;
+import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
@@ -84,24 +86,16 @@ public class ErpcResponseDecoder extends LengthFieldBasedFrameDecoder {
                 .serializeType(serializeType)
                 .responseId(responseId)
                 .build();
-        //todo
-//        if(requestType == RequestType.HEARTBEAT.getId()){
-//            return erpcRequest;
-//        }
+
 
         int bodyLength = fullLength-headLength;
         byte[] payload = new byte[bodyLength];
         byteBuf.readBytes(payload);
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(payload);
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(bis);
-            Object responseBody = objectInputStream.readObject();
-            erpcResponse.setBody(responseBody);
+        Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getSerializer();
+        Object body = serializer.deserialize(payload, Object.class);
+        erpcResponse.setBody(body);
 
-        } catch (IOException | ClassNotFoundException e) {
-            log.error("响应【{}】反序列化时发生了异常", responseId, e);
-        }
         if(log.isDebugEnabled()){
             log.debug("响应【{}】已完成报文的解码。", erpcResponse.getResponseId());
         }

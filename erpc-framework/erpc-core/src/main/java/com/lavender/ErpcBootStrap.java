@@ -6,6 +6,7 @@ import com.lavender.channel.handler.ErpcResponseEncoder;
 import com.lavender.channel.handler.MethodCallHandler;
 import com.lavender.discovery.Registry;
 import com.lavender.discovery.RegistryConfig;
+import com.lavender.serialiize.impl.JdkSerializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -41,6 +42,7 @@ public class ErpcBootStrap {
     public static final Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
 
     public final static Map<Long, CompletableFuture<Object>> PENDING_REQUEST = new ConcurrentHashMap<>(8);
+    public static String SERIALIZE_TYPE = "jdk";
 
 
     private ErpcBootStrap(){
@@ -135,6 +137,14 @@ public class ErpcBootStrap {
     public ErpcBootStrap reference(ReferenceConfig<?> reference) {
         reference.setRegistry(registry);
 
+        return this;
+    }
+
+    public ErpcBootStrap serialize(String type) {
+        SERIALIZE_TYPE = type;
+        if(log.isDebugEnabled()){
+            log.debug("使用的序列化方式为【{}】", type);
+        }
         return this;
     }
 }

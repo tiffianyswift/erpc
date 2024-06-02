@@ -1,5 +1,7 @@
 package com.lavender.channel.handler;
 
+import com.lavender.serialiize.Serializer;
+import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
@@ -8,6 +10,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -91,15 +94,10 @@ public class ErpcRequestDecoder extends LengthFieldBasedFrameDecoder {
         byte[] payload = new byte[payLoadLength];
         byteBuf.readBytes(payload);
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(payload);
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(bis);
-            ErpcRequestPayload requestPayload = (ErpcRequestPayload) objectInputStream.readObject();
-            erpcRequest.setRequestPayload(requestPayload);
+        Serializer serializer = SerializerFactory.getSerializerWraper(serializeType).getSerializer();
+        ErpcRequestPayload erpcRequestPayload = serializer.deserialize(payload, ErpcRequestPayload.class);
+        erpcRequest.setRequestPayload(erpcRequestPayload);
 
-        } catch (IOException | ClassNotFoundException e) {
-            log.error("请求【{}】反序列化时发生了异常", requestId, e);
-        }
         if(log.isDebugEnabled()){
             log.debug("请求【{}】已完成报文的解码。", erpcRequest.getRequestId());
         }

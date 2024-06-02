@@ -6,6 +6,7 @@ import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;
 import com.lavender.exceptions.DiscoverRegistryException;
 import com.lavender.exceptions.NetworkException;
+import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
@@ -105,7 +106,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 .requestId(ErpcBootStrap.ID_GENERATOR.getId())
                 .compressType((byte) 1)
                 .requestType(RequestType.REQUEST.getId())
-                .serializeType((byte) 1)
+                .serializeType(SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getCode())
                 .requestPayload(requestPayload)
                 .build();
 

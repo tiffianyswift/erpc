@@ -1,6 +1,7 @@
 package com.lavender;
 
 import com.lavender.discovery.RegistryConfig;
+import com.lavender.serialiize.impl.JdkSerializer;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -20,10 +21,11 @@ public class Application {
         ErpcBootStrap.getInstance()
                 .application("first-erpc-consumer")
                 .registry(new RegistryConfig("zookeeper://"+Constant.DEFAULT_ZK_CONNECT))
+                .serialize("hessian")
                 .reference(reference);
 
         ExampleErpc exampleErpc = reference.get();
         String res = exampleErpc.saySo("so");
-        log.error(res+"yehongliang");
+        log.error(res);
     }
 }

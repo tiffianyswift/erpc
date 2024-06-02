@@ -1,5 +1,9 @@
 package com.lavender.channel.handler;
 
+import com.lavender.ErpcBootStrap;
+import com.lavender.serialiize.Serializer;
+import com.lavender.serialiize.SerializerFactory;
+import com.lavender.serialiize.impl.JdkSerializer;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
 import com.lavender.transport.message.MessageConstant;
@@ -46,8 +50,9 @@ public class ErpcRequestEncoder extends MessageToByteEncoder<ErpcRequest> {
         byteBuf.writeByte(erpcRequest.getCompressType());
         byteBuf.writeLong(erpcRequest.getRequestId());
 
+        Serializer serializer = SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getSerializer();
+        byte[] bodyBytes = serializer.serialize(erpcRequest.getRequestPayload());
 
-        byte[] bodyBytes = getBodyBytes(erpcRequest.getRequestPayload());
         byteBuf.writeBytes(bodyBytes);
 
         int writerIndex = byteBuf.writerIndex();
@@ -59,24 +64,6 @@ public class ErpcRequestEncoder extends MessageToByteEncoder<ErpcRequest> {
             log.debug("请求【{}】已完成报文的编码。", erpcRequest.getRequestId());
         }
     }
-    private byte[] getBodyBytes(ErpcRequestPayload requestPayload){
-        if(requestPayload==null){
-            return new byte[0];
-        }
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream outputStream = new ObjectOutputStream(baos);
-            outputStream.writeObject(requestPayload);
-            return baos.toByteArray();
 
-        } catch (IOException e) {
-            log.error("序列化时出现异常.");
-            throw new RuntimeException(e);
-        }
-    }
 
-    public static void main(String[] args) {
-        byte[] b = new byte[0];
-        System.out.println(b.length);
-    }
 }

@@ -1,5 +1,7 @@
 package com.lavender.channel.handler;
 
+import com.lavender.serialiize.Serializer;
+import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
 import com.lavender.transport.message.ErpcResponse;
@@ -47,8 +49,9 @@ public class ErpcResponseEncoder extends MessageToByteEncoder<ErpcResponse> {
         byteBuf.writeByte(erpcResponse.getCompressType());
         byteBuf.writeLong(erpcResponse.getResponseId());
 
-
-        byte[] bodyBytes = getBodyBytes(erpcResponse.getBody());
+        Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getSerializer();
+        byte[] bodyBytes = serializer.serialize(erpcResponse.getBody());
+        // todo compress
         byteBuf.writeBytes(bodyBytes);
 
         int writerIndex = byteBuf.writerIndex();
@@ -60,20 +63,6 @@ public class ErpcResponseEncoder extends MessageToByteEncoder<ErpcResponse> {
             log.debug("响应【{}】已完成报文的编码。", erpcResponse.getResponseId());
         }
     }
-    private byte[] getBodyBytes(Object body){
-        if(body==null){
-            return new byte[0];
-        }
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream outputStream = new ObjectOutputStream(baos);
-            outputStream.writeObject(body);
-            return baos.toByteArray();
 
-        } catch (IOException e) {
-            log.error("序列化时出现异常.");
-            throw new RuntimeException(e);
-        }
-    }
 
 }
