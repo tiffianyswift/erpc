@@ -1,11 +1,10 @@
 package com.lavender.discovery.impl;
 
 import com.lavender.Constant;
-import com.lavender.NetUtils;
+import com.lavender.utils.NetUtils;
 import com.lavender.ServiceConfig;
 import com.lavender.discovery.AbstractRegistry;
 import com.lavender.exceptions.DiscoverRegistryException;
-import com.lavender.exceptions.NetworkException;
 import com.lavender.utils.ZooKeeperNode;
 import com.lavender.utils.ZooKeeperUtil;
 import lombok.extern.slf4j.Slf4j;

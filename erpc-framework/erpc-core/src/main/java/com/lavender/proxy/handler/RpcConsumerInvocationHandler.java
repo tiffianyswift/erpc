@@ -1,6 +1,7 @@
 package com.lavender.proxy.handler;
 
 import com.lavender.ErpcBootStrap;
+import com.lavender.IDGenerator;
 import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;
 import com.lavender.exceptions.DiscoverRegistryException;
@@ -101,7 +102,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                                                         .returnType(method.getReturnType())
                                                                 .build();
         ErpcRequest erpcRequest = ErpcRequest.builder()
-                .requestId(1L)
+                .requestId(ErpcBootStrap.ID_GENERATOR.getId())
                 .compressType((byte) 1)
                 .requestType(RequestType.REQUEST.getId())
                 .serializeType((byte) 1)

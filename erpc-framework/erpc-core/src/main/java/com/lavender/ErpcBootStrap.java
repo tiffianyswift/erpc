@@ -33,6 +33,8 @@ public class ErpcBootStrap {
     private RegistryConfig registryConfig;
     private ProtocolConfig protocolConfig;
     private int port = 8088;
+
+    public static final IDGenerator ID_GENERATOR = new IDGenerator(1, 1);
     private Registry registry;
     public static final Map<String, ServiceConfig<?>> SERVICES_LIST = new HashMap<>(16);
 

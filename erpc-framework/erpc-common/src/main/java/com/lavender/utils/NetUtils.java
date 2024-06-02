@@ -1,4 +1,4 @@
-package com.lavender;
+package com.lavender.utils;
 
 import com.lavender.exceptions.NetworkException;
 import lombok.extern.slf4j.Slf4j;
