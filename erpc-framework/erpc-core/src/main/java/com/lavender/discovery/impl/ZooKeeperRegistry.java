@@ -8,8 +8,11 @@ import com.lavender.discovery.AbstractRegistry;
 import com.lavender.exceptions.DiscoverRegistryException;
 import com.lavender.utils.ZooKeeperNode;
 import com.lavender.utils.ZooKeeperUtil;
+import com.lavender.watch.OnLineAndOffLineWatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import java.net.InetSocketAddress;
@@ -55,7 +58,7 @@ public class ZooKeeperRegistry extends AbstractRegistry {
         String serviceNode = Constant.BASE_PROVIDERS_PATH + "/" + serviceName;
 
         // 2, get child of the node
-        List<String> children =  ZooKeeperUtil.getChildren(zooKeeper, serviceNode, null);
+        List<String> children =  ZooKeeperUtil.getChildren(zooKeeper, serviceNode, new OnLineAndOffLineWatcher());
         List<InetSocketAddress> inetSocketAddresses = children.stream().map(ipString -> {
             String[] ipAndPort = ipString.split(":");
             String ip = ipAndPort[0];

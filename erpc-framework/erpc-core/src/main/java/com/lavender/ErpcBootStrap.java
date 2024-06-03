@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ErpcBootStrap {
 
-    public static final int PORT = 8090;
+    public static final int PORT = 8098;
     private static ErpcBootStrap erpcBootStrap = new ErpcBootStrap();
     public static final ThreadLocal<ErpcRequest> REQUEST_THREAD_LOCAL = new ThreadLocal<>();
     private String applicationName = "default";

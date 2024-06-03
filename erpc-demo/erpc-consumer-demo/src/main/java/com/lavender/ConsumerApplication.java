@@ -30,8 +30,6 @@ public class ConsumerApplication {
         ExampleErpc exampleErpc = reference.get();
         String res = exampleErpc.saySo("so");
         log.error(res);
-        System.out.println("开始心跳检测");
-        HeartbeatDetector.detectHeartbeat(ExampleErpc.class.getName());
 //        for(Map.Entry<String, ServiceConfig<?>> entry : ErpcBootStrap.SERVICES_LIST.entrySet()){
 //            HeartbeatDetector.detectHeartbeat(entry.getKey());
 //        }
