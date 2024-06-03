@@ -11,11 +11,13 @@ import com.lavender.transport.message.MessageConstant;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.Date;
 
 /**
  * @author: lavender
@@ -50,6 +52,8 @@ public class ErpcResponseEncoder extends MessageToByteEncoder<ErpcResponse> {
         byteBuf.writeByte(erpcResponse.getSerializeType());
         byteBuf.writeByte(erpcResponse.getCompressType());
         byteBuf.writeLong(erpcResponse.getResponseId());
+
+        byteBuf.writeLong(erpcResponse.getTimeStamp());
 
         Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getSerializer();
         byte[] bodyBytes = serializer.serialize(erpcResponse.getBody());

@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -86,7 +87,25 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
     }
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        InetSocketAddress address = registry.lookup(interfaceReceiver.getName());
+
+        ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
+                .interfaceName(interfaceReceiver.getName())
+                .methodName(method.getName())
+                .parametersType(method.getParameterTypes())
+                .parametersValue(args)
+                .returnType(method.getReturnType())
+                .build();
+        ErpcRequest erpcRequest = ErpcRequest.builder()
+                .requestId(ErpcBootStrap.ID_GENERATOR.getId())
+                .compressType(CompressorFactory.getCompressorWraper(ErpcBootStrap.COMPRESS_TYPE).getCode())
+                .requestType(RequestType.REQUEST.getId())
+                .serializeType(SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getCode())
+                .timeStamp(new Date().getTime())
+                .requestPayload(requestPayload)
+                .build();
+        ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
+
+        InetSocketAddress address = ErpcBootStrap.LOAD_BALANCER.selectServiceAddress(interfaceReceiver.getName());
         if(log.isDebugEnabled()){
             log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
         }
@@ -94,21 +113,8 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         if(log.isDebugEnabled()){
             log.debug("获取了和【{}】建立的连接通道", address, interfaceReceiver.getName());
         }
-        ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
-                        .interfaceName(interfaceReceiver.getName())
-                                .methodName(method.getName())
-                                        .parametersType(method.getParameterTypes())
-                                                .parametersValue(args)
-                                                        .returnType(method.getReturnType())
-                                                                .build();
-        ErpcRequest erpcRequest = ErpcRequest.builder()
-                .requestId(ErpcBootStrap.ID_GENERATOR.getId())
-                .compressType(CompressorFactory.getCompressorWraper(ErpcBootStrap.COMPRESS_TYPE).getCode())
-                .requestType(RequestType.REQUEST.getId())
-                .serializeType(SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getCode())
-                .requestPayload(requestPayload)
-                .build();
 
+        ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
         // use netty to send rpc request
 
         //sync
@@ -122,13 +128,13 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 //                }
         //async
         CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-        ErpcBootStrap.PENDING_REQUEST.put(1L, completableFuture);
+        ErpcBootStrap.PENDING_REQUEST.put(erpcRequest.getRequestId(), completableFuture);
         channel.writeAndFlush(erpcRequest).addListener(promise ->{
-
             if(!promise.isSuccess()){
                 completableFuture.completeExceptionally(promise.cause());
             }
         });
+        ErpcBootStrap.REQUEST_THREAD_LOCAL.remove();
 
         return completableFuture.get(10, TimeUnit.SECONDS);
     }

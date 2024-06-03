@@ -1,6 +1,7 @@
 package com.lavender.discovery.impl;
 
 import com.lavender.Constant;
+import com.lavender.ErpcBootStrap;
 import com.lavender.utils.NetUtils;
 import com.lavender.ServiceConfig;
 import com.lavender.discovery.AbstractRegistry;
@@ -37,7 +38,7 @@ public class ZooKeeperRegistry extends AbstractRegistry {
             ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.PERSISTENT);
         }
         // todo: 后续处理端口
-        String node = parentNode + "/" + NetUtils.getIp() + ":" + 8088;
+        String node = parentNode + "/" + NetUtils.getIp() + ":" + ErpcBootStrap.PORT;
         if(!ZooKeeperUtil.exists(zooKeeper, node, null)){
             ZooKeeperNode zooKeeperNode = new ZooKeeperNode(node, null);
             ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.EPHEMERAL);
@@ -49,7 +50,7 @@ public class ZooKeeperRegistry extends AbstractRegistry {
     }
 
     @Override
-    public InetSocketAddress lookup(String serviceName) {
+    public List<InetSocketAddress> lookup(String serviceName) {
         // 1, find the node that provide service
         String serviceNode = Constant.BASE_PROVIDERS_PATH + "/" + serviceName;
 
@@ -65,6 +66,6 @@ public class ZooKeeperRegistry extends AbstractRegistry {
         if(inetSocketAddresses.isEmpty()){
             throw new DiscoverRegistryException("未发现任何可用的主机。");
         }
-        return inetSocketAddresses.get(0);
+        return inetSocketAddresses;
     }
 }

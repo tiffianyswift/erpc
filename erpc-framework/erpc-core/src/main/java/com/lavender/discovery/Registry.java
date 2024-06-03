@@ -3,6 +3,7 @@ package com.lavender.discovery;
 import com.lavender.ServiceConfig;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * @author: lavender
@@ -22,5 +23,5 @@ public interface Registry {
      * @param name
      * @return ip+port
      */
-    InetSocketAddress lookup(String name);
+    List<InetSocketAddress> lookup(String name);
 }

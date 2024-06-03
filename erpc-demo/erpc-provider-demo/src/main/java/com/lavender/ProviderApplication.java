@@ -9,7 +9,7 @@ import com.lavender.impl.ExampleErpcImpl;
  * @create: 2024-05-29 21:03
  **/
 
-public class Application {
+public class ProviderApplication {
     public static void main(String[] args) {
 
         ServiceConfig<ExampleErpc> service = new ServiceConfig<>();

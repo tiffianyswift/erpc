@@ -4,9 +4,15 @@ package com.lavender;
 import com.lavender.channel.handler.ErpcRequestDecoder;
 import com.lavender.channel.handler.ErpcResponseEncoder;
 import com.lavender.channel.handler.MethodCallHandler;
+import com.lavender.core.HeartbeatDetector;
 import com.lavender.discovery.Registry;
 import com.lavender.discovery.RegistryConfig;
+import com.lavender.loadbalancer.LoadBalancer;
+import com.lavender.loadbalancer.impl.ConsistentHashLoadBalancer;
+import com.lavender.loadbalancer.impl.MinResponseTimeLoadBalancer;
+import com.lavender.loadbalancer.impl.RoundRobinLoadBalancer;
 import com.lavender.serialiize.impl.JdkSerializer;
+import com.lavender.transport.message.ErpcRequest;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -19,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,19 +37,24 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ErpcBootStrap {
 
+    public static final int PORT = 8090;
     private static ErpcBootStrap erpcBootStrap = new ErpcBootStrap();
+    public static final ThreadLocal<ErpcRequest> REQUEST_THREAD_LOCAL = new ThreadLocal<>();
     private String applicationName = "default";
-    private RegistryConfig registryConfig;
+
     private ProtocolConfig protocolConfig;
-    private int port = 8088;
 
     public static final IDGenerator ID_GENERATOR = new IDGenerator(1, 1);
     private Registry registry;
+    public static LoadBalancer LOAD_BALANCER;
     public static final Map<String, ServiceConfig<?>> SERVICES_LIST = new HashMap<>(16);
 
     public static final Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
+    public static final TreeMap<Long, Channel> ANSWER_TIME_CHANNEL_CACHE = new TreeMap<>();
 
     public final static Map<Long, CompletableFuture<Object>> PENDING_REQUEST = new ConcurrentHashMap<>(8);
+
+
     public static String SERIALIZE_TYPE = "jdk";
     public static String COMPRESS_TYPE = "gzip";
 
@@ -54,6 +66,9 @@ public class ErpcBootStrap {
 
     public static ErpcBootStrap getInstance() {
         return erpcBootStrap;
+    }
+    public Registry getRegistry() {
+        return registry;
     }
 
     /**
@@ -73,7 +88,8 @@ public class ErpcBootStrap {
      */
     public ErpcBootStrap registry(RegistryConfig registryConfig) {
         this.registry = registryConfig.getRegistry();
-        this.registryConfig = registryConfig;
+        // todo 需要修改
+        ErpcBootStrap.LOAD_BALANCER = new MinResponseTimeLoadBalancer();
         return this;
     }
 
@@ -129,7 +145,7 @@ public class ErpcBootStrap {
                             .addLast(new ErpcResponseEncoder());
                 }
             });
-            ChannelFuture channelFuture = serverBootstrap.bind(port).sync();
+            ChannelFuture channelFuture = serverBootstrap.bind(PORT).sync();
             channelFuture.channel().closeFuture().sync();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -137,6 +153,7 @@ public class ErpcBootStrap {
     }
 
     public ErpcBootStrap reference(ReferenceConfig<?> reference) {
+        HeartbeatDetector.detectHeartbeat(reference.getInterface().getName());
         reference.setRegistry(registry);
 
         return this;

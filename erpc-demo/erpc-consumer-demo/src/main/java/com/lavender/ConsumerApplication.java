@@ -1,8 +1,10 @@
 package com.lavender;
 
+import com.lavender.core.HeartbeatDetector;
 import com.lavender.discovery.RegistryConfig;
-import com.lavender.serialiize.impl.JdkSerializer;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
 
 
 /**
@@ -12,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  **/
 
 @Slf4j
-public class Application {
+public class ConsumerApplication {
     public static void main(String[] args) {
         ReferenceConfig<ExampleErpc> reference = new ReferenceConfig<>();
         reference.setInterface(ExampleErpc.class);
@@ -28,5 +30,11 @@ public class Application {
         ExampleErpc exampleErpc = reference.get();
         String res = exampleErpc.saySo("so");
         log.error(res);
+        System.out.println("开始心跳检测");
+        HeartbeatDetector.detectHeartbeat(ExampleErpc.class.getName());
+//        for(Map.Entry<String, ServiceConfig<?>> entry : ErpcBootStrap.SERVICES_LIST.entrySet()){
+//            HeartbeatDetector.detectHeartbeat(entry.getKey());
+//        }
+
     }
 }

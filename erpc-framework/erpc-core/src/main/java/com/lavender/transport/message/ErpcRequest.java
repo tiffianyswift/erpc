@@ -21,5 +21,7 @@ public class ErpcRequest {
     private byte compressType;
     private byte serializeType;
 
+    private long timeStamp;
+
     ErpcRequestPayload requestPayload;
 }

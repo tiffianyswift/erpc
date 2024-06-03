@@ -23,5 +23,7 @@ public class ErpcResponse {
 
     private byte code;
 
+    private long timeStamp;
+
     private Object body;
 }

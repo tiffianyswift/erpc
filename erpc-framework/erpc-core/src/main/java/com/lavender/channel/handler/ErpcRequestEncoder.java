@@ -44,6 +44,7 @@ public class ErpcRequestEncoder extends MessageToByteEncoder<ErpcRequest> {
         byteBuf.writeByte(erpcRequest.getSerializeType());
         byteBuf.writeByte(erpcRequest.getCompressType());
         byteBuf.writeLong(erpcRequest.getRequestId());
+        byteBuf.writeLong(erpcRequest.getTimeStamp());
 
         Serializer serializer = SerializerFactory.getSerializerWraper(erpcRequest.getSerializeType()).getSerializer();
         byte[] bodyBytes = serializer.serialize(erpcRequest.getRequestPayload());

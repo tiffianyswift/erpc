@@ -2,6 +2,7 @@ package com.lavender.channel.handler;
 
 import com.lavender.ErpcBootStrap;
 import com.lavender.ServiceConfig;
+import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.enumeration.ResponseCode;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Date;
 
 /**
  * @author: lavender
@@ -23,17 +25,22 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<ErpcRequest> 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ErpcRequest erpcRequest) throws Exception {
         ErpcRequestPayload requestPayload = erpcRequest.getRequestPayload();
-
-        Object result = callTargetMethod(requestPayload);
-        if(log.isDebugEnabled()){
-            log.debug("请求【{}】已经在服务端完成调用。", erpcRequest.getRequestId());
+        Object result = null;
+        // only rpc request call method
+        if(erpcRequest.getRequestType() == RequestType.REQUEST.getId()){
+            result = callTargetMethod(requestPayload);
+            if(log.isDebugEnabled()){
+                log.debug("请求【{}】已经在服务端完成调用。", erpcRequest.getRequestId());
+            }
         }
+
         ErpcResponse erpcResponse = ErpcResponse.builder()
                         .code(ResponseCode.SUCCESS.getCode())
                                 .responseId(erpcRequest.getRequestId())
                                         .compressType(erpcRequest.getCompressType())
                                                 .serializeType(erpcRequest.getSerializeType())
-                                                        .body(result).build();
+                                                        .body(result)
+                                                            .timeStamp(new Date().getTime()).build();
 
         channelHandlerContext.channel().writeAndFlush(erpcResponse);
     }

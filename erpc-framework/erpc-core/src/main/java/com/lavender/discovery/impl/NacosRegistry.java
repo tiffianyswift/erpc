@@ -4,6 +4,7 @@ import com.lavender.ServiceConfig;
 import com.lavender.discovery.AbstractRegistry;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * @author: lavender
@@ -22,7 +23,7 @@ public class NacosRegistry extends AbstractRegistry {
     }
 
     @Override
-    public InetSocketAddress lookup(String name) {
+    public List<InetSocketAddress> lookup(String name) {
         return null;
     }
 }

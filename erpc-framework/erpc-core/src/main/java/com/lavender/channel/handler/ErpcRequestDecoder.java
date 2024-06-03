@@ -73,6 +73,8 @@ public class ErpcRequestDecoder extends LengthFieldBasedFrameDecoder {
         // parse request id
         long requestId = byteBuf.readLong();
 
+        long timeStamp = byteBuf.readLong();
+
 
         // todo 解压缩
 
@@ -82,6 +84,7 @@ public class ErpcRequestDecoder extends LengthFieldBasedFrameDecoder {
                 .compressType(compressType)
                 .serializeType(serializeType)
                 .requestId(requestId)
+                .timeStamp(timeStamp)
                 .build();
         if(requestType == RequestType.HEARTBEAT.getId()){
             return erpcRequest;

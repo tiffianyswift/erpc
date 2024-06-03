@@ -20,7 +20,11 @@ public class MySimpleChannelInboundHandler extends SimpleChannelInboundHandler<E
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ErpcResponse erpcResponse) throws Exception {
         Object returnValue = erpcResponse.getBody();
-        CompletableFuture<Object> completableFuture = ErpcBootStrap.PENDING_REQUEST.get(1L);
+        // todo code 区分。
+        if(returnValue == null){
+            returnValue = new Object();
+        }
+        CompletableFuture<Object> completableFuture = ErpcBootStrap.PENDING_REQUEST.get(erpcResponse.getResponseId());
         completableFuture.complete(returnValue);
         if(log.isDebugEnabled()){
             log.debug("已寻找到编号为【{}】的completableFuture，处理响应结果。", erpcResponse.getResponseId());
