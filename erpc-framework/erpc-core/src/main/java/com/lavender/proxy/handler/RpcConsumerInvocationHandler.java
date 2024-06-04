@@ -1,5 +1,6 @@
 package com.lavender.proxy.handler;
 
+import com.lavender.Configuration;
 import com.lavender.ErpcBootStrap;
 import com.lavender.compress.CompressorFactory;
 import com.lavender.discovery.NettyBootstrapInitializer;
@@ -95,17 +96,18 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 .parametersValue(args)
                 .returnType(method.getReturnType())
                 .build();
+        Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
         ErpcRequest erpcRequest = ErpcRequest.builder()
-                .requestId(ErpcBootStrap.ID_GENERATOR.getId())
-                .compressType(CompressorFactory.getCompressorWraper(ErpcBootStrap.COMPRESS_TYPE).getCode())
+                .requestId(configuration.getIdGenerator().getId())
+                .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
                 .requestType(RequestType.REQUEST.getId())
-                .serializeType(SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getCode())
+                .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
                 .timeStamp(new Date().getTime())
                 .requestPayload(requestPayload)
                 .build();
         ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
 
-        InetSocketAddress address = ErpcBootStrap.LOAD_BALANCER.selectServiceAddress(interfaceReceiver.getName());
+        InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
         if(log.isDebugEnabled()){
             log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
         }

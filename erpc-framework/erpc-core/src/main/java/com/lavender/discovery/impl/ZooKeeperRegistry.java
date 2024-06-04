@@ -41,7 +41,7 @@ public class ZooKeeperRegistry extends AbstractRegistry {
             ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.PERSISTENT);
         }
         // todo: 后续处理端口
-        String node = parentNode + "/" + NetUtils.getIp() + ":" + ErpcBootStrap.PORT;
+        String node = parentNode + "/" + NetUtils.getIp() + ":" + ErpcBootStrap.getInstance().getConfiguration().getPort();
         if(!ZooKeeperUtil.exists(zooKeeper, node, null)){
             ZooKeeperNode zooKeeperNode = new ZooKeeperNode(node, null);
             ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.EPHEMERAL);

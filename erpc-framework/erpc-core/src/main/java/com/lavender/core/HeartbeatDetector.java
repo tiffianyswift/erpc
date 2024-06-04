@@ -1,5 +1,6 @@
 package com.lavender.core;
 
+import com.lavender.Configuration;
 import com.lavender.ErpcBootStrap;
 import com.lavender.compress.Compressor;
 import com.lavender.compress.CompressorFactory;
@@ -25,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class HeartbeatDetector {
     public static void detectHeartbeat(String ServiceName){
-        Registry registry = ErpcBootStrap.getInstance().getRegistry();
+        Registry registry = ErpcBootStrap.getInstance().getConfiguration().getRegistryConfig().getRegistry();
         List<InetSocketAddress> addresses = registry.lookup(ServiceName);
 
         for(InetSocketAddress address : addresses){
@@ -50,16 +51,17 @@ public class HeartbeatDetector {
         public void run() {
             ErpcBootStrap.ANSWER_TIME_CHANNEL_CACHE.clear();
             Map<InetSocketAddress, Channel> cache = ErpcBootStrap.CHANNEL_CACHE;
+            Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
             int tryTimes = 3;
             for(Map.Entry<InetSocketAddress, Channel> entry: cache.entrySet()){
                 while(0 < tryTimes){
                     Channel channel = entry.getValue();
                     long start = System.currentTimeMillis();
                     ErpcRequest erpcRequest = ErpcRequest.builder()
-                            .requestId(ErpcBootStrap.ID_GENERATOR.getId())
-                            .compressType(CompressorFactory.getCompressorWraper(ErpcBootStrap.COMPRESS_TYPE).getCode())
+                            .requestId(configuration.getIdGenerator().getId())
+                            .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
                             .requestType(RequestType.HEARTBEAT.getId())
-                            .serializeType(SerializerFactory.getSerializerWraper(ErpcBootStrap.SERIALIZE_TYPE).getCode())
+                            .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
                             .timeStamp(new Date().getTime())
                             .build();
 

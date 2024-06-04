@@ -29,7 +29,7 @@ public class OnLineAndOffLineWatcher implements Watcher {
 
             }
             System.out.println(watchedEvent.getPath() + "-------------------检测到有节点上下线，将重新拉取服务列表-----------------"+watchedEvent.getPath());
-            Registry registry = ErpcBootStrap.getInstance().getRegistry();
+            Registry registry = ErpcBootStrap.getInstance().getConfiguration().getRegistryConfig().getRegistry();
 
             String[] split = watchedEvent.getPath().split("/");
             String serviceName = split[split.length-1];
@@ -50,7 +50,7 @@ public class OnLineAndOffLineWatcher implements Watcher {
                     ErpcBootStrap.CHANNEL_CACHE.remove(entry.getKey());
                 }
             }
-            LoadBalancer loadBalancer = ErpcBootStrap.LOAD_BALANCER;
+            LoadBalancer loadBalancer = ErpcBootStrap.getInstance().getConfiguration().getLoadBalancer();
             loadBalancer.reLoadBalance(serviceName, addressList);
         }
     }
