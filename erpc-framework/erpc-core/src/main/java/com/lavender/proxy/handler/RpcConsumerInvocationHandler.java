@@ -1,5 +1,6 @@
 package com.lavender.proxy.handler;
 
+import com.lavender.annotation.TryTimes;
 import com.lavender.config.Configuration;
 import com.lavender.ErpcBootStrap;
 import com.lavender.compress.CompressorFactory;
@@ -88,39 +89,47 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
     }
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        TryTimes tryTimesAnnotation = method.getAnnotation(TryTimes.class);
+        int tryTimes = 0;
+        int intervalTime = 0;
+        if(tryTimesAnnotation != null){
+            tryTimes = tryTimesAnnotation.tryTimes();
+            intervalTime = tryTimesAnnotation.intervalTime();
+        }
+        while(true) {
+            // retry 1,exception 2,wrong response
+            try {
+                ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
+                        .interfaceName(interfaceReceiver.getName())
+                        .methodName(method.getName())
+                        .parametersType(method.getParameterTypes())
+                        .parametersValue(args)
+                        .returnType(method.getReturnType())
+                        .build();
+                Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
+                ErpcRequest erpcRequest = ErpcRequest.builder()
+                        .requestId(configuration.getIdGenerator().getId())
+                        .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
+                        .requestType(RequestType.REQUEST.getId())
+                        .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
+                        .timeStamp(new Date().getTime())
+                        .requestPayload(requestPayload)
+                        .build();
+                ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
 
-        try {
-            ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
-                    .interfaceName(interfaceReceiver.getName())
-                    .methodName(method.getName())
-                    .parametersType(method.getParameterTypes())
-                    .parametersValue(args)
-                    .returnType(method.getReturnType())
-                    .build();
-            Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
-            ErpcRequest erpcRequest = ErpcRequest.builder()
-                    .requestId(configuration.getIdGenerator().getId())
-                    .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
-                    .requestType(RequestType.REQUEST.getId())
-                    .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
-                    .timeStamp(new Date().getTime())
-                    .requestPayload(requestPayload)
-                    .build();
-            ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
+                InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
+                if (log.isDebugEnabled()) {
+                    log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
+                }
+                Channel channel = getAvailableChannel(address);
+                if (log.isDebugEnabled()) {
+                    log.debug("获取了和【{}】建立的连接通道", address, interfaceReceiver.getName());
+                }
 
-            InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
-            if (log.isDebugEnabled()) {
-                log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
-            }
-            Channel channel = getAvailableChannel(address);
-            if (log.isDebugEnabled()) {
-                log.debug("获取了和【{}】建立的连接通道", address, interfaceReceiver.getName());
-            }
+                ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
+                // use netty to send rpc request
 
-            ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
-            // use netty to send rpc request
-
-            //sync
+                //sync
 //                ChannelFuture channelFuture = channel.writeAndFlush(new Object());
 //                if(channelFuture.isDone()){
 //                    Object object = channelFuture.getNow();
@@ -129,18 +138,33 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 //                    Throwable cause = channelFuture.cause();
 //                    throw new RuntimeException(cause);
 //                }
-            //async
-            CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-            ErpcBootStrap.PENDING_REQUEST.put(erpcRequest.getRequestId(), completableFuture);
-            channel.writeAndFlush(erpcRequest).addListener(promise -> {
-                if (!promise.isSuccess()) {
-                    completableFuture.completeExceptionally(promise.cause());
-                }
-            });
-            ErpcBootStrap.REQUEST_THREAD_LOCAL.remove();
+                //async
+                CompletableFuture<Object> completableFuture = new CompletableFuture<>();
+                ErpcBootStrap.PENDING_REQUEST.put(erpcRequest.getRequestId(), completableFuture);
+                channel.writeAndFlush(erpcRequest).addListener(promise -> {
+                    if (!promise.isSuccess()) {
+                        completableFuture.completeExceptionally(promise.cause());
+                    }
+                });
+                ErpcBootStrap.REQUEST_THREAD_LOCAL.remove();
 
-            return completableFuture.get(10, TimeUnit.SECONDS);
+                return completableFuture.get(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                tryTimes--;
+                try {
+                    Thread.sleep(intervalTime);
+                } catch (InterruptedException ex) {
+                    log.error("在进行重试时发生异常", ex);
+                }
+                if(tryTimes<0){
+                    log.error("对方法[{}]进行远程调用时，重试{}次，依然不可调用", method.getName(), tryTimes, e);
+                    break;
+                }
+                log.error("在进行第{}次重试时发生异常", tryTimes, e);
+
+            }
         }
+        throw new RuntimeException("执行远程方法"+method.getName()+"调用失败。");
     }
 
 }
