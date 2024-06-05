@@ -2,18 +2,24 @@ package com.lavender.channel.handler;
 
 import com.lavender.ErpcBootStrap;
 import com.lavender.ServiceConfig;
+import com.lavender.protection.RateLimiter;
+import com.lavender.protection.TokenBucketRateLimiter;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.enumeration.ResponseCode;
 import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcRequestPayload;
 import com.lavender.transport.message.ErpcResponse;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * @author: lavender
@@ -24,24 +30,47 @@ import java.util.Date;
 public class MethodCallHandler extends SimpleChannelInboundHandler<ErpcRequest> {
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ErpcRequest erpcRequest) throws Exception {
-        ErpcRequestPayload requestPayload = erpcRequest.getRequestPayload();
-        Object result = null;
-        // only rpc request call method
-        if(erpcRequest.getRequestType() == RequestType.REQUEST.getId()){
-            result = callTargetMethod(requestPayload);
-            if(log.isDebugEnabled()){
-                log.debug("请求【{}】已经在服务端完成调用。", erpcRequest.getRequestId());
-            }
-        }
-
+        Channel channel = channelHandlerContext.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        Map<SocketAddress, RateLimiter> ipRateLimiter = ErpcBootStrap.getInstance().getConfiguration().getIpRateLimiter();
+        RateLimiter rateLimiter = ipRateLimiter.get(socketAddress);
         ErpcResponse erpcResponse = ErpcResponse.builder()
-                        .code(ResponseCode.SUCCESS.getCode())
-                                .responseId(erpcRequest.getRequestId())
-                                        .compressType(erpcRequest.getCompressType())
-                                                .serializeType(erpcRequest.getSerializeType())
-                                                        .body(result)
-                                                            .timeStamp(new Date().getTime()).build();
+                .responseId(erpcRequest.getRequestId())
+                .compressType(erpcRequest.getCompressType())
+                .serializeType(erpcRequest.getSerializeType())
+                .timeStamp(new Date().getTime()).build();
+        if(rateLimiter == null){
+            rateLimiter = new TokenBucketRateLimiter(1, 1);
+            ipRateLimiter.put(socketAddress, rateLimiter);
+        }
+        boolean allowRequest = rateLimiter.allowRequest();
+        log.debug("[[[{}]]]", allowRequest);
+        if(!allowRequest){
+            erpcResponse.setBody(null);
+            erpcResponse.setCode(ResponseCode.RATE_LIMITED.getCode());
 
+        }
+        else if(erpcRequest.getRequestType() == RequestType.HEARTBEAT.getId()){
+            erpcResponse.setBody(null);
+            erpcResponse.setCode(ResponseCode.SUCESS_HEARTBEAT.getCode());
+
+        }
+        else{
+            try {
+                ErpcRequestPayload requestPayload = erpcRequest.getRequestPayload();
+                Object result = callTargetMethod(requestPayload);
+                if (log.isDebugEnabled()) {
+                    log.debug("请求【{}】已经在服务端完成调用。", erpcRequest.getRequestId());
+                }
+                erpcResponse.setCode(ResponseCode.SUCCESS_METHOD_CALL.getCode());
+                erpcResponse.setBody(result);
+            }catch (Exception e){
+                log.error("编号为【{}】的请求在调用过程中发生异常[{}]", erpcRequest.getRequestId(), erpcRequest.getRequestType(), e);
+                erpcResponse.setCode(ResponseCode.FAIL_METHOD_CALL.getCode());
+            }
+
+
+        }
         channelHandlerContext.channel().writeAndFlush(erpcResponse);
     }
 

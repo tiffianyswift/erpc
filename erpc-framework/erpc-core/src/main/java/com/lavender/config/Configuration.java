@@ -1,27 +1,17 @@
 package com.lavender.config;
 
 import com.lavender.IDGenerator;
-import com.lavender.ProtocolConfig;
-import com.lavender.compress.Compressor;
-import com.lavender.compress.impl.GzipCompressor;
 import com.lavender.discovery.RegistryConfig;
 import com.lavender.loadbalancer.LoadBalancer;
 import com.lavender.loadbalancer.impl.RoundRobinLoadBalancer;
-import com.lavender.serialiize.Serializer;
-import com.lavender.serialiize.impl.JdkSerializer;
+import com.lavender.protection.CircuitBreaker;
+import com.lavender.protection.RateLimiter;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
+import java.net.SocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author: lavender
@@ -44,6 +34,8 @@ public class Configuration {
 
 
     private LoadBalancer loadBalancer = new RoundRobinLoadBalancer();
+    private final Map<SocketAddress, RateLimiter> ipRateLimiter = new ConcurrentHashMap<>();
+    private final Map<SocketAddress, CircuitBreaker> ipCircuitBreaker = new ConcurrentHashMap<>();
 
     public Configuration(){
         // 1, 成员变量

@@ -1,7 +1,6 @@
 package com.lavender.config;
 
 import com.lavender.IDGenerator;
-import com.lavender.ProtocolConfig;
 import com.lavender.compress.Compressor;
 import com.lavender.compress.CompressorFactory;
 import com.lavender.discovery.RegistryConfig;

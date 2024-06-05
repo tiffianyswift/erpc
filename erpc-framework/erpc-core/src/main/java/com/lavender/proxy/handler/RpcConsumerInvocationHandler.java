@@ -8,6 +8,7 @@ import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;
 import com.lavender.exceptions.DiscoverRegistryException;
 import com.lavender.exceptions.NetworkException;
+import com.lavender.protection.CircuitBreaker;
 import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
@@ -19,7 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.sql.Time;
 import java.util.Date;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -98,28 +104,46 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         }
         while(true) {
             // retry 1,exception 2,wrong response
-            try {
-                ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
-                        .interfaceName(interfaceReceiver.getName())
-                        .methodName(method.getName())
-                        .parametersType(method.getParameterTypes())
-                        .parametersValue(args)
-                        .returnType(method.getReturnType())
-                        .build();
-                Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
-                ErpcRequest erpcRequest = ErpcRequest.builder()
-                        .requestId(configuration.getIdGenerator().getId())
-                        .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
-                        .requestType(RequestType.REQUEST.getId())
-                        .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
-                        .timeStamp(new Date().getTime())
-                        .requestPayload(requestPayload)
-                        .build();
-                ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
 
-                InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
-                if (log.isDebugEnabled()) {
-                    log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
+            ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
+                    .interfaceName(interfaceReceiver.getName())
+                    .methodName(method.getName())
+                    .parametersType(method.getParameterTypes())
+                    .parametersValue(args)
+                    .returnType(method.getReturnType())
+                    .build();
+            Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
+            ErpcRequest erpcRequest = ErpcRequest.builder()
+                    .requestId(configuration.getIdGenerator().getId())
+                    .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
+                    .requestType(RequestType.REQUEST.getId())
+                    .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
+                    .timeStamp(new Date().getTime())
+                    .requestPayload(requestPayload)
+                    .build();
+            ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
+
+            InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
+            if (log.isDebugEnabled()) {
+                log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
+            }
+
+            Map<SocketAddress, CircuitBreaker> ipCircuitBreaker = ErpcBootStrap.getInstance().getConfiguration().getIpCircuitBreaker();
+            CircuitBreaker circuitBreaker = ipCircuitBreaker.get(address);
+            if(circuitBreaker == null){
+                circuitBreaker = new CircuitBreaker(10, 0.5f);
+                ipCircuitBreaker.put(address, circuitBreaker);
+            }
+            try {
+                if((erpcRequest.getRequestType() != RequestType.HEARTBEAT.getId()) && circuitBreaker.isBreak()){
+                    Timer timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            ErpcBootStrap.getInstance().getConfiguration().getIpCircuitBreaker().get(address ).reset();
+                        }
+                    }, 5000);
+                    throw new RuntimeException("熔断器开启，无法完成请求");
                 }
                 Channel channel = getAvailableChannel(address);
                 if (log.isDebugEnabled()) {
@@ -148,9 +172,13 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 });
                 ErpcBootStrap.REQUEST_THREAD_LOCAL.remove();
 
-                return completableFuture.get(10, TimeUnit.SECONDS);
+                Object result = completableFuture.get(10, TimeUnit.SECONDS);
+                circuitBreaker.recordRequest();
+
+                return result;
             } catch (Exception e) {
                 tryTimes--;
+                circuitBreaker.recordErrorRequest();
                 try {
                     Thread.sleep(intervalTime);
                 } catch (InterruptedException ex) {

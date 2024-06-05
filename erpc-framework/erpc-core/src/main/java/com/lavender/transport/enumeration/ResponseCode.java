@@ -1,12 +1,20 @@
 package com.lavender.transport.enumeration;
 
 /**
+ * 成功 20（call method success) 21(heartbeat sucess)
+ * 负载 31 (server load very high, rate limited)
+ * 错误 44 (client wrong code)
+ * 错误 50 (server wrong code)
  * @author: lavender
  * @Desc:
  * @create: 2024-06-01 14:41
  **/
 public enum ResponseCode {
-    SUCCESS((byte) 1, "success"), FAIL((byte) 2, "fail");
+    SUCCESS_METHOD_CALL((byte) 1, "success"),
+    SUCESS_HEARTBEAT((byte) 21, ""),
+    RATE_LIMITED((byte)31, ""),
+    RESOUCES_NOT_FOUND((byte)44, ""),
+    FAIL_METHOD_CALL((byte) 50, "fail");
     private byte code;
     private String desc;
 

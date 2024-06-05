@@ -28,8 +28,10 @@ public class ConsumerApplication {
                 .reference(reference);
 
         ExampleErpc exampleErpc = reference.get();
-        String res = exampleErpc.saySo("so");
-        log.error(res);
+        for (int i = 0; i < 50; i++) {
+            String sayHi = exampleErpc.saySo("so");
+            log.info("sayHi-->{}", sayHi);
+        }
 //        for(Map.Entry<String, ServiceConfig<?>> entry : ErpcBootStrap.SERVICES_LIST.entrySet()){
 //            HeartbeatDetector.detectHeartbeat(entry.getKey());
 //        }
