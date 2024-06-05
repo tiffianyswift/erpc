@@ -4,16 +4,11 @@ package com.lavender;
 import com.lavender.channel.handler.ErpcRequestDecoder;
 import com.lavender.channel.handler.ErpcResponseEncoder;
 import com.lavender.channel.handler.MethodCallHandler;
+import com.lavender.config.Configuration;
 import com.lavender.core.HeartbeatDetector;
-import com.lavender.discovery.Registry;
 import com.lavender.discovery.RegistryConfig;
-import com.lavender.exceptions.annotation.ErpcImpl;
+import com.lavender.annotation.ErpcImpl;
 import com.lavender.loadbalancer.LoadBalancer;
-import com.lavender.loadbalancer.impl.ConsistentHashLoadBalancer;
-import com.lavender.loadbalancer.impl.MinResponseTimeLoadBalancer;
-import com.lavender.loadbalancer.impl.RoundRobinLoadBalancer;
-import com.lavender.serialiize.SerializerFactory;
-import com.lavender.serialiize.impl.JdkSerializer;
 import com.lavender.transport.message.ErpcRequest;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -24,7 +19,6 @@ import io.netty.handler.logging.LoggingHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
@@ -97,18 +91,6 @@ public class ErpcBootStrap {
         return this;
     }
 
-    /**
-     * select a sequecelize protocol
-     * @param protocolConfig
-     * @return
-     */
-    public ErpcBootStrap protocol(ProtocolConfig protocolConfig) {
-        configuration.setProtocolConfig(protocolConfig);
-        if(log.isDebugEnabled()){
-            log.debug("当前工程使用了，{}协议进行序列化", protocolConfig.toString());
-        }
-        return this;
-    }
 
     /**
      * publish a service

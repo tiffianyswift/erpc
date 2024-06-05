@@ -1,8 +1,7 @@
 package com.lavender.core;
 
-import com.lavender.Configuration;
+import com.lavender.config.Configuration;
 import com.lavender.ErpcBootStrap;
-import com.lavender.compress.Compressor;
 import com.lavender.compress.CompressorFactory;
 import com.lavender.discovery.NettyBootstrapInitializer;
 import com.lavender.discovery.Registry;

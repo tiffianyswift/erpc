@@ -11,12 +11,7 @@ import com.lavender.impl.ExampleErpcImpl;
 
 public class ProviderApplication {
     public static void main(String[] args) {
-        ;
-        ErpcBootStrap.getInstance()
-                .application("first-erpc-provider")
-                .registry(new RegistryConfig("zookeeper://"+Constant.DEFAULT_ZK_CONNECT))
-                .protocol(new ProtocolConfig("jdk"))
-                .scan("com.lavender")
-                .start();
+
+        ErpcBootStrap.getInstance().scan("com.lavender").start();
     }
 }

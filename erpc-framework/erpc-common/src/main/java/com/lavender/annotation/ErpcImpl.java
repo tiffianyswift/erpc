@@ -1,4 +1,4 @@
-package com.lavender.exceptions.annotation;
+package com.lavender.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

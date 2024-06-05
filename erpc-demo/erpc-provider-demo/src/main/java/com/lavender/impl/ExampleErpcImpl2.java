@@ -1,9 +1,8 @@
 package com.lavender.impl;
 
 
-import com.lavender.ExampleErpc;
 import com.lavender.ExampleErpc2;
-import com.lavender.exceptions.annotation.ErpcImpl;
+import com.lavender.annotation.ErpcImpl;
 
 /**
  * @author: lavender

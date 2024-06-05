@@ -1,5 +1,6 @@
 package com.lavender.serialiize;
 
+import com.lavender.config.ObjectWrapper;
 import com.lavender.serialiize.impl.HessianSerializer;
 import com.lavender.serialiize.impl.JdkSerializer;
 import com.lavender.serialiize.impl.JsonSerializer;
@@ -14,14 +15,14 @@ import java.util.concurrent.ConcurrentHashMap;
  **/
 @Slf4j
 public class SerializerFactory {
-    public final static ConcurrentHashMap<String, SerializerWraper> SERIALIZER_NAME_CACHE = new ConcurrentHashMap<>(16);
-    public final static ConcurrentHashMap<Byte, SerializerWraper> SERIALIZER_CODE_CACHE = new ConcurrentHashMap<>(16);
+    public final static ConcurrentHashMap<String, ObjectWrapper<Serializer>> SERIALIZER_NAME_CACHE = new ConcurrentHashMap<>(16);
+    public final static ConcurrentHashMap<Byte, ObjectWrapper<Serializer>> SERIALIZER_CODE_CACHE = new ConcurrentHashMap<>(16);
     private static final String DEFAULT_SERIALIZER_NAME = "jdk";
     private static final byte DEFAULT_SERIALIZER_CODE = 1;
     static {
-        SerializerWraper jdk = new SerializerWraper((byte) 1, "jdk", new JdkSerializer());
-        SerializerWraper json = new SerializerWraper((byte) 2, "json", new JsonSerializer());
-        SerializerWraper hessian = new SerializerWraper((byte) 3, "hessian", new HessianSerializer());
+        ObjectWrapper<Serializer> jdk = new ObjectWrapper<>((byte) 1, "jdk", new JdkSerializer());
+        ObjectWrapper<Serializer> json = new ObjectWrapper<>((byte) 2, "json", new JsonSerializer());
+        ObjectWrapper<Serializer> hessian = new ObjectWrapper<>((byte) 3, "hessian", new HessianSerializer());
         SERIALIZER_NAME_CACHE.put("jdk", jdk);
         SERIALIZER_NAME_CACHE.put("json", json);
         SERIALIZER_NAME_CACHE.put("hessian", hessian);
@@ -30,25 +31,29 @@ public class SerializerFactory {
         SERIALIZER_CODE_CACHE.put((byte)3, hessian);
 
     }
-    public static SerializerWraper getSerializerWraper(String serializeType) {
-        SerializerWraper serializerWraper = SERIALIZER_NAME_CACHE.get(serializeType);
-        if(serializerWraper == null){
+    public static ObjectWrapper<Serializer> getSerializerWraper(String serializeType) {
+        ObjectWrapper<Serializer> serializerWrapper = SERIALIZER_NAME_CACHE.get(serializeType);
+        if(serializerWrapper == null){
             if(log.isDebugEnabled()){
                 log.debug("未找到名称为【{}】的序列化协议，已使用默认的序列化协议【{}】", serializeType, DEFAULT_SERIALIZER_NAME);
             }
             return SERIALIZER_NAME_CACHE.get(DEFAULT_SERIALIZER_NAME);
         }
-        return serializerWraper;
+        return serializerWrapper;
     }
-    public static SerializerWraper getSerializerWraper(byte serializeCode) {
-        SerializerWraper serializerWraper = SERIALIZER_CODE_CACHE.get(serializeCode);
-        if(serializerWraper == null){
+    public static ObjectWrapper<Serializer> getSerializerWraper(byte serializeCode) {
+        ObjectWrapper<Serializer> serializerWrapper = SERIALIZER_CODE_CACHE.get(serializeCode);
+        if(serializerWrapper == null){
             if(log.isDebugEnabled()){
                 log.debug("未找到名称为【{}】的序列化协议，已使用默认的序列化协议【{}】", serializeCode, DEFAULT_SERIALIZER_CODE);
             }
             return SERIALIZER_CODE_CACHE.get(DEFAULT_SERIALIZER_CODE);
         }
-        return serializerWraper;
+        return serializerWrapper;
+    }
+    public static void addSerializer(ObjectWrapper<Serializer> serializerObjectWrapper){
+        SERIALIZER_NAME_CACHE.put(serializerObjectWrapper.getName(), serializerObjectWrapper);
+        SERIALIZER_CODE_CACHE.put(serializerObjectWrapper.getCode(), serializerObjectWrapper);
     }
 
 }

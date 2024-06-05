@@ -1,6 +1,6 @@
 package com.lavender.proxy.handler;
 
-import com.lavender.Configuration;
+import com.lavender.config.Configuration;
 import com.lavender.ErpcBootStrap;
 import com.lavender.compress.CompressorFactory;
 import com.lavender.discovery.NettyBootstrapInitializer;
@@ -89,37 +89,38 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-        ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
-                .interfaceName(interfaceReceiver.getName())
-                .methodName(method.getName())
-                .parametersType(method.getParameterTypes())
-                .parametersValue(args)
-                .returnType(method.getReturnType())
-                .build();
-        Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
-        ErpcRequest erpcRequest = ErpcRequest.builder()
-                .requestId(configuration.getIdGenerator().getId())
-                .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
-                .requestType(RequestType.REQUEST.getId())
-                .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
-                .timeStamp(new Date().getTime())
-                .requestPayload(requestPayload)
-                .build();
-        ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
+        try {
+            ErpcRequestPayload requestPayload = ErpcRequestPayload.builder()
+                    .interfaceName(interfaceReceiver.getName())
+                    .methodName(method.getName())
+                    .parametersType(method.getParameterTypes())
+                    .parametersValue(args)
+                    .returnType(method.getReturnType())
+                    .build();
+            Configuration configuration = ErpcBootStrap.getInstance().getConfiguration();
+            ErpcRequest erpcRequest = ErpcRequest.builder()
+                    .requestId(configuration.getIdGenerator().getId())
+                    .compressType(CompressorFactory.getCompressorWraper(configuration.getCompressType()).getCode())
+                    .requestType(RequestType.REQUEST.getId())
+                    .serializeType(SerializerFactory.getSerializerWraper(configuration.getSerializeType()).getCode())
+                    .timeStamp(new Date().getTime())
+                    .requestPayload(requestPayload)
+                    .build();
+            ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
 
-        InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
-        if(log.isDebugEnabled()){
-            log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
-        }
-        Channel channel = getAvailableChannel(address);
-        if(log.isDebugEnabled()){
-            log.debug("获取了和【{}】建立的连接通道", address, interfaceReceiver.getName());
-        }
+            InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
+            if (log.isDebugEnabled()) {
+                log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
+            }
+            Channel channel = getAvailableChannel(address);
+            if (log.isDebugEnabled()) {
+                log.debug("获取了和【{}】建立的连接通道", address, interfaceReceiver.getName());
+            }
 
-        ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
-        // use netty to send rpc request
+            ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
+            // use netty to send rpc request
 
-        //sync
+            //sync
 //                ChannelFuture channelFuture = channel.writeAndFlush(new Object());
 //                if(channelFuture.isDone()){
 //                    Object object = channelFuture.getNow();
@@ -128,17 +129,18 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 //                    Throwable cause = channelFuture.cause();
 //                    throw new RuntimeException(cause);
 //                }
-        //async
-        CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-        ErpcBootStrap.PENDING_REQUEST.put(erpcRequest.getRequestId(), completableFuture);
-        channel.writeAndFlush(erpcRequest).addListener(promise ->{
-            if(!promise.isSuccess()){
-                completableFuture.completeExceptionally(promise.cause());
-            }
-        });
-        ErpcBootStrap.REQUEST_THREAD_LOCAL.remove();
+            //async
+            CompletableFuture<Object> completableFuture = new CompletableFuture<>();
+            ErpcBootStrap.PENDING_REQUEST.put(erpcRequest.getRequestId(), completableFuture);
+            channel.writeAndFlush(erpcRequest).addListener(promise -> {
+                if (!promise.isSuccess()) {
+                    completableFuture.completeExceptionally(promise.cause());
+                }
+            });
+            ErpcBootStrap.REQUEST_THREAD_LOCAL.remove();
 
-        return completableFuture.get(10, TimeUnit.SECONDS);
+            return completableFuture.get(10, TimeUnit.SECONDS);
+        }
     }
 
 }

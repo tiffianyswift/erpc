@@ -94,11 +94,11 @@ public class ErpcRequestDecoder extends LengthFieldBasedFrameDecoder {
         byte[] payload = new byte[payLoadLength];
         byteBuf.readBytes(payload);
 
-        Compressor compressor = CompressorFactory.getCompressorWraper(compressType).getCompressor();
+        Compressor compressor = CompressorFactory.getCompressorWraper(compressType).getImpl();
         payload = compressor.decompress(payload);
 
 
-        Serializer serializer = SerializerFactory.getSerializerWraper(serializeType).getSerializer();
+        Serializer serializer = SerializerFactory.getSerializerWraper(serializeType).getImpl();
         ErpcRequestPayload erpcRequestPayload = serializer.deserialize(payload, ErpcRequestPayload.class);
         erpcRequest.setRequestPayload(erpcRequestPayload);
 

@@ -55,11 +55,11 @@ public class ErpcResponseEncoder extends MessageToByteEncoder<ErpcResponse> {
 
         byteBuf.writeLong(erpcResponse.getTimeStamp());
 
-        Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getSerializer();
+        Serializer serializer = SerializerFactory.getSerializerWraper(erpcResponse.getSerializeType()).getImpl();
         byte[] bodyBytes = serializer.serialize(erpcResponse.getBody());
         // todo compress
 
-        Compressor compressor = CompressorFactory.getCompressorWraper(erpcResponse.getCompressType()).getCompressor();
+        Compressor compressor = CompressorFactory.getCompressorWraper(erpcResponse.getCompressType()).getImpl();
         bodyBytes = compressor.compress(bodyBytes);
 
         byteBuf.writeBytes(bodyBytes);
