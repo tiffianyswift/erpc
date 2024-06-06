@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE configuration SYSTEM "erpc-framework\erpc-core\src\main\java\com\lavender\builder\xml\erpc-config.dtd">
+<configuration>
+    <port>3333</port>
+    <appName>erpc-lavender</appName>
+    <registry url="zookeeper://49.235.128.207:2181"/>
+    <serializeType type="jdk"/>
+    <serializer code="3" name="hessian" class="com.lavender.serialiize.impl.JdkSerializer"/>
+    <compressType type="gzip"/>
+    <compressor code="1" name="gzip" class="com.lavender.compress.impl.GzipCompressor"/>
+    <loadBalancer class="com.lavender.loadbalancer.impl.RoundRobinLoadBalancer"/>
+    <idGenerator class="com.lavender.IDGenerator" dataCenterId="2" machineId="4"/>
+</configuration>

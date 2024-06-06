@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>erpc-springboot-provider</artifactId>
+    <artifactId>erpc-springboot-consumer</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -24,12 +24,12 @@
         </dependency>
         <dependency>
             <groupId>com.lavender</groupId>
-            <artifactId>erpc-core</artifactId>
+            <artifactId>erpc-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.lavender</groupId>
-            <artifactId>erpc-api</artifactId>
+            <artifactId>erpc-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

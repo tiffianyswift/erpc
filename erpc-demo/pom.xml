@@ -16,6 +16,7 @@
         <module>erpc-provider-demo</module>
         <module>erpc-api</module>
         <module>erpc-springboot-provider</module>
+        <module>erpc-springboot-consumer</module>
     </modules>
 
     <properties>
