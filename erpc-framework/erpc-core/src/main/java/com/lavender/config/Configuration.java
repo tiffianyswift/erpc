@@ -29,6 +29,8 @@ public class Configuration {
 
     private String compressType = "gzip";
 
+    private String group = "default";
+
     private IDGenerator idGenerator = new IDGenerator(1, 1);
 
 

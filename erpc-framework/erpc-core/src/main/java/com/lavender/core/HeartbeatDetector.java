@@ -8,6 +8,7 @@ import com.lavender.discovery.Registry;
 import com.lavender.serialiize.SerializerFactory;
 import com.lavender.transport.enumeration.RequestType;
 import com.lavender.transport.message.ErpcRequest;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ import java.util.concurrent.ExecutionException;
 public class HeartbeatDetector {
     public static void detectHeartbeat(String ServiceName){
         Registry registry = ErpcBootStrap.getInstance().getConfiguration().getRegistryConfig().getRegistry();
-        List<InetSocketAddress> addresses = registry.lookup(ServiceName);
+        List<InetSocketAddress> addresses = registry.lookup(ServiceName, ErpcBootStrap.getInstance().getConfiguration().getGroup());
 
         for(InetSocketAddress address : addresses){
             try {

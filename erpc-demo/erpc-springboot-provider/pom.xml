@@ -5,23 +5,23 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.lavender</groupId>
-        <artifactId>erpc</artifactId>
+        <artifactId>erpc-demo</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>erpc-demo</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>erpc-consumer-demo</module>
-        <module>erpc-provider-demo</module>
-        <module>erpc-api</module>
-        <module>erpc-springboot-provider</module>
-    </modules>
+    <artifactId>erpc-springboot-provider</artifactId>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+    </dependencies>
 
 </project>

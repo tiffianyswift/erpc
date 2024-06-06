@@ -32,14 +32,13 @@ import java.util.concurrent.TimeUnit;
 public class ReferenceConfig<T> {
     private Class<T> interfaceReceiver;
     private Registry registry;
-
-
+    private String group;
 
 
     public T get(){
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class<T>[] classes = new Class[]{interfaceReceiver};
-        InvocationHandler handler = new RpcConsumerInvocationHandler(registry, interfaceReceiver);
+        InvocationHandler handler = new RpcConsumerInvocationHandler(registry, interfaceReceiver, group);
         // service find
 
         Object helloProxy = Proxy.newProxyInstance(classLoader, classes, handler);
@@ -66,5 +65,13 @@ public class ReferenceConfig<T> {
 
     public void setRegistry(Registry registry) {
         this.registry = registry;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public String getGroup() {
+        return group;
     }
 }

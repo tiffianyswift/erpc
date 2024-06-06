@@ -5,6 +5,7 @@ import com.lavender.channel.handler.ErpcRequestDecoder;
 import com.lavender.channel.handler.ErpcResponseEncoder;
 import com.lavender.channel.handler.MethodCallHandler;
 import com.lavender.config.Configuration;
+import com.lavender.core.ErpcShutdownHook;
 import com.lavender.core.HeartbeatDetector;
 import com.lavender.discovery.RegistryConfig;
 import com.lavender.annotation.ErpcImpl;
@@ -115,6 +116,9 @@ public class ErpcBootStrap {
      * start netty service
      */
     public void start() {
+        // register a hook
+        Runtime.getRuntime().addShutdownHook(new ErpcShutdownHook());
+
         EventLoopGroup boss = new NioEventLoopGroup(2);
         EventLoopGroup worker = new NioEventLoopGroup(10);
         try {
@@ -141,6 +145,7 @@ public class ErpcBootStrap {
     public ErpcBootStrap reference(ReferenceConfig<?> reference) {
         HeartbeatDetector.detectHeartbeat(reference.getInterface().getName());
         reference.setRegistry(configuration.getRegistryConfig().getRegistry());
+        reference.setGroup(this.getConfiguration().getGroup());
 
         return this;
     }
@@ -179,11 +184,14 @@ public class ErpcBootStrap {
                      NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
+            ErpcImpl erpcImpl = clazz.getAnnotation(ErpcImpl.class);
+            String group = erpcImpl.group();
 
             for (Class<?> anInterface : interfaces) {
                 ServiceConfig<?> serviceConfig = new ServiceConfig<>();
                 serviceConfig.setInterface(anInterface);
                 serviceConfig.setRef(instance);
+                serviceConfig.setGroup(group);
                 publish(serviceConfig);
                 if(log.isDebugEnabled()){
                     log.debug("扫描到服务【{}】", anInterface);
@@ -228,4 +236,8 @@ public class ErpcBootStrap {
 
     }
 
+    public ErpcBootStrap group(String group) {
+        this.getConfiguration().setGroup(group);
+        return this;
+    }
 }

@@ -23,5 +23,5 @@ public interface Registry {
      * @param name
      * @return ip+port
      */
-    List<InetSocketAddress> lookup(String name);
+    List<InetSocketAddress> lookup(String name, String group);
 }

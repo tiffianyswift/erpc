@@ -14,7 +14,8 @@ public enum ResponseCode {
     SUCESS_HEARTBEAT((byte) 21, ""),
     RATE_LIMITED((byte)31, ""),
     RESOUCES_NOT_FOUND((byte)44, ""),
-    FAIL_METHOD_CALL((byte) 50, "fail");
+    FAIL_METHOD_CALL((byte) 50, "fail"),
+    CLOSE_WAIT((byte)51, "");
     private byte code;
     private String desc;
 

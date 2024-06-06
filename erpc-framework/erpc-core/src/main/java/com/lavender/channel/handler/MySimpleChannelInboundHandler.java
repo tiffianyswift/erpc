@@ -2,8 +2,10 @@ package com.lavender.channel.handler;
 
 import com.lavender.ErpcBootStrap;
 import com.lavender.exceptions.ResponseException;
+import com.lavender.loadbalancer.LoadBalancer;
 import com.lavender.protection.CircuitBreaker;
 import com.lavender.transport.enumeration.ResponseCode;
+import com.lavender.transport.message.ErpcRequest;
 import com.lavender.transport.message.ErpcResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -61,7 +63,21 @@ public class MySimpleChannelInboundHandler extends SimpleChannelInboundHandler<E
         }
         else if(code == ResponseCode.SUCESS_HEARTBEAT.getCode()){
             completableFuture.complete(null);
-            log.error("当前id为【{}】的请求未找到相应资源，处理心跳", erpcResponse.getResponseId(), erpcResponse.getCode());
+            if(log.isDebugEnabled()){
+                log.debug("寻找到编号为【{}】的completableFuture，处理心跳。响应码为[{}]", erpcResponse.getResponseId(), erpcResponse.getCode());
+
+            }
+        }
+        else if(code == ResponseCode.CLOSE_WAIT.getCode()){
+            completableFuture.complete(null);
+            if(log.isDebugEnabled()){
+                log.error("当前id为【{}】的请求，响应被拒绝，响应码【{}】", erpcResponse.getResponseId(), erpcResponse.getCode());
+            }
+            ErpcBootStrap.CHANNEL_CACHE.remove(socketAddress);
+            ErpcRequest erpcRequest = ErpcBootStrap.REQUEST_THREAD_LOCAL.get();
+            ErpcBootStrap.getInstance().getConfiguration().getLoadBalancer().reLoadBalance(erpcRequest.getRequestPayload().getInterfaceName()
+                    , ErpcBootStrap.CHANNEL_CACHE.keySet().stream().toList());
+            throw new ResponseException(code, ResponseCode.CLOSE_WAIT.getDesc());
         }
 
     }

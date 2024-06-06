@@ -40,12 +40,20 @@ public class ZooKeeperRegistry extends AbstractRegistry {
             ZooKeeperNode zooKeeperNode = new ZooKeeperNode(parentNode, null);
             ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.PERSISTENT);
         }
-        // todo: 后续处理端口
-        String node = parentNode + "/" + NetUtils.getIp() + ":" + ErpcBootStrap.getInstance().getConfiguration().getPort();
+
+
+        String groupNode = parentNode + "/"+service.getGroup();
+        if(!ZooKeeperUtil.exists(zooKeeper, groupNode, null)){
+            ZooKeeperNode zooKeeperNode = new ZooKeeperNode(groupNode, null);
+            ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.PERSISTENT);
+        }
+
+        String node = groupNode + "/" + NetUtils.getIp() + ":" + ErpcBootStrap.getInstance().getConfiguration().getPort();
         if(!ZooKeeperUtil.exists(zooKeeper, node, null)){
             ZooKeeperNode zooKeeperNode = new ZooKeeperNode(node, null);
             ZooKeeperUtil.createNode(zooKeeper, zooKeeperNode, null, CreateMode.EPHEMERAL);
         }
+
         if(log.isDebugEnabled()){
             log.debug("服务{}, 已经被注册", service.getInterface().getName());
         }
@@ -53,9 +61,9 @@ public class ZooKeeperRegistry extends AbstractRegistry {
     }
 
     @Override
-    public List<InetSocketAddress> lookup(String serviceName) {
+    public List<InetSocketAddress> lookup(String serviceName, String group) {
         // 1, find the node that provide service
-        String serviceNode = Constant.BASE_PROVIDERS_PATH + "/" + serviceName;
+        String serviceNode = Constant.BASE_PROVIDERS_PATH + "/" + serviceName + "/" + group;
 
         // 2, get child of the node
         List<String> children =  ZooKeeperUtil.getChildren(zooKeeper, serviceNode, new OnLineAndOffLineWatcher());

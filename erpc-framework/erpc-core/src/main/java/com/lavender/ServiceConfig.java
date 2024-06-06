@@ -9,6 +9,7 @@ package com.lavender;
 public class ServiceConfig<T> {
     private Class<?> interfaceProvider;
     private Object ref;
+    private String group = "default";
 
     public Class<?> getInterface() {
         return interfaceProvider;
@@ -24,5 +25,13 @@ public class ServiceConfig<T> {
 
     public void setRef(Object ref) {
         this.ref = ref;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public String getGroup() {
+        return group;
     }
 }

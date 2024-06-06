@@ -9,7 +9,7 @@ import com.lavender.annotation.ErpcImpl;
  * @Desc:
  * @create: 2024-05-29 16:42
  **/
-@ErpcImpl
+@ErpcImpl(group = "primary")
 public class ExampleErpcImpl implements ExampleErpc {
     @Override
     public String saySo(String msg) {

@@ -41,10 +41,12 @@ import java.util.concurrent.TimeoutException;
 public class RpcConsumerInvocationHandler implements InvocationHandler {
     private Registry registry;
     private Class<?> interfaceReceiver;
+    private String group;
 
-    public RpcConsumerInvocationHandler(Registry registry, Class<?> interfaceReceiver) {
+    public RpcConsumerInvocationHandler(Registry registry, Class<?> interfaceReceiver, String group) {
         this.registry = registry;
         this.interfaceReceiver = interfaceReceiver;
+        this.group = group;
     }
 
     public Registry getRegistry() {
@@ -123,7 +125,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                     .build();
             ErpcBootStrap.REQUEST_THREAD_LOCAL.set(erpcRequest);
 
-            InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName());
+            InetSocketAddress address = configuration.getLoadBalancer().selectServiceAddress(interfaceReceiver.getName(), group);
             if (log.isDebugEnabled()) {
                 log.debug("服务调用方， 发现了服务【{}】的可用主机【{}】。", interfaceReceiver.getName(), address);
             }

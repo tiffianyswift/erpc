@@ -2,6 +2,7 @@ package com.lavender.channel.handler;
 
 import com.lavender.ErpcBootStrap;
 import com.lavender.ServiceConfig;
+import com.lavender.core.ShutdownHolder;
 import com.lavender.protection.RateLimiter;
 import com.lavender.protection.TokenBucketRateLimiter;
 import com.lavender.transport.enumeration.RequestType;
@@ -30,21 +31,31 @@ import java.util.Map;
 public class MethodCallHandler extends SimpleChannelInboundHandler<ErpcRequest> {
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ErpcRequest erpcRequest) throws Exception {
-        Channel channel = channelHandlerContext.channel();
-        SocketAddress socketAddress = channel.remoteAddress();
-        Map<SocketAddress, RateLimiter> ipRateLimiter = ErpcBootStrap.getInstance().getConfiguration().getIpRateLimiter();
-        RateLimiter rateLimiter = ipRateLimiter.get(socketAddress);
         ErpcResponse erpcResponse = ErpcResponse.builder()
                 .responseId(erpcRequest.getRequestId())
                 .compressType(erpcRequest.getCompressType())
                 .serializeType(erpcRequest.getSerializeType())
                 .timeStamp(new Date().getTime()).build();
+
+        Channel channel = channelHandlerContext.channel();
+
+        if(ShutdownHolder.BAFFLE.get()){
+            erpcResponse.setCode(ResponseCode.CLOSE_WAIT.getCode());
+            channel.writeAndFlush(erpcResponse);
+            return;
+        }
+
+        ShutdownHolder.REQUEST_COUNTER.increment();
+
+        SocketAddress socketAddress = channel.remoteAddress();
+        Map<SocketAddress, RateLimiter> ipRateLimiter = ErpcBootStrap.getInstance().getConfiguration().getIpRateLimiter();
+        RateLimiter rateLimiter = ipRateLimiter.get(socketAddress);
+
         if(rateLimiter == null){
-            rateLimiter = new TokenBucketRateLimiter(1, 1);
+            rateLimiter = new TokenBucketRateLimiter(100, 100);
             ipRateLimiter.put(socketAddress, rateLimiter);
         }
         boolean allowRequest = rateLimiter.allowRequest();
-        log.debug("[[[{}]]]", allowRequest);
         if(!allowRequest){
             erpcResponse.setBody(null);
             erpcResponse.setCode(ResponseCode.RATE_LIMITED.getCode());
@@ -72,6 +83,7 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<ErpcRequest> 
 
         }
         channelHandlerContext.channel().writeAndFlush(erpcResponse);
+        ShutdownHolder.REQUEST_COUNTER.decrement();
     }
 
     private Object callTargetMethod(ErpcRequestPayload requestPayload) {

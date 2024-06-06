@@ -33,7 +33,7 @@ public class OnLineAndOffLineWatcher implements Watcher {
 
             String[] split = watchedEvent.getPath().split("/");
             String serviceName = split[split.length-1];
-            List<InetSocketAddress> addressList = registry.lookup(serviceName);
+            List<InetSocketAddress> addressList = registry.lookup(serviceName, ErpcBootStrap.getInstance().getConfiguration().getGroup());
             for(InetSocketAddress address : addressList){
                 if(!ErpcBootStrap.CHANNEL_CACHE.containsKey(address)){
                     try {

@@ -23,10 +23,10 @@ public abstract class AbstractLoadBalancer implements LoadBalancer{
 
 
     @Override
-    public InetSocketAddress selectServiceAddress(String serviceName) {
+    public InetSocketAddress selectServiceAddress(String serviceName, String group) {
         Selector selector = cache.get(serviceName);
         if(selector==null){
-            List<InetSocketAddress> serviceList = ErpcBootStrap.getInstance().getConfiguration().getRegistryConfig().getRegistry().lookup(serviceName);
+            List<InetSocketAddress> serviceList = ErpcBootStrap.getInstance().getConfiguration().getRegistryConfig().getRegistry().lookup(serviceName, group);
             selector = getSelector(serviceList);
             cache.put(serviceName, selector);
         }
